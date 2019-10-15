@@ -23,15 +23,19 @@ j5 <- rma_base %>%
   paste0("https://www.rma.usda.gov", .) %>% 
   # change up the file link as zip
   str_replace_all("ashx\\?la=en", "zip")
-
+# Hack, there's a duplicate of 1982 that needs to be 1983:
+j5 <- append(j5, paste0("https://www.rma.usda.gov/-/media/RMAweb/",
+                        "SCC-SOB/State-County-Crop/sobscc_1983.zip"))
 
 # ---- download -----------------------------------------------------------
 
 
 map(j5, function(x){
-  Sys.sleep(runif(1, 2, 3))
   file_x <- paste0(data_source, "/", basename(x))
-  if (!file.exists(file_x)) download.file(x, file_x)
+  if (!file.exists(file_x)) {
+    Sys.sleep(runif(1, 2, 3))
+    download.file(x, file_x)
+  } 
 })
 
 coverage <- rma_base %>% 
@@ -43,9 +47,11 @@ coverage <- rma_base %>%
   str_replace_all("ashx\\?la=en", "zip")
 
 map(coverage, function(x){
-  Sys.sleep(runif(1, 2, 3))
   file_x <- paste0(data_source, "/", basename(x))
-  if (!file.exists(file_x)) download.file(x, file_x)
+  if (!file.exists(file_x)) {
+    Sys.sleep(runif(1, 2, 3))
+    download.file(x, file_x)
+  }
 })
 
 type_struc <- rma_base %>% 
@@ -57,9 +63,11 @@ type_struc <- rma_base %>%
   str_replace_all("ashx\\?la=en", "zip")
 
 map(type_struc, function(x){
-  Sys.sleep(runif(1, 2, 3))
   file_x <- paste0(data_source, "/", basename(x))
-  if (!file.exists(file_x)) download.file(x, file_x)
+  if (!file.exists(file_x)) {
+    Sys.sleep(runif(1, 2, 3))
+    download.file(x, file_x)
+  }
 })
 
 # ---- read ---------------------------------------------------------------
