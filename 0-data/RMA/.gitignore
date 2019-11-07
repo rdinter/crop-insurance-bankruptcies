@@ -1,4 +1,5 @@
 raw
+*.rds
 sob_cause.csv
 sob_cause.rds
 sob_indem.csv
