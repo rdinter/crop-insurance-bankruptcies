@@ -3,22 +3,31 @@
 # http://www.bls.gov/lau/
 # Update bls website: http://www.bls.gov/bls/ftp_migration_crosswalk.htm
 
+# ---- start --------------------------------------------------------------
+
+
 library("stringr")
 library("tidyverse")
 library("zoo")
 
+# Set the years you want to download, currently for all data through current year
 year1       <- 1976 #actually, they do not have county estimates before 1990.
-year2       <- 2018
+year2       <- as.numeric(format(Sys.Date(), "%Y"))
 local_dir   <- "0-data/LAU"
 data_source <- paste0(local_dir, "/raw")
 if (!file.exists(local_dir)) dir.create(local_dir, recursive = T)
 if (!file.exists(data_source)) dir.create(data_source, recursive = T)
+
+# ---- download-documentation ---------------------------------------------
 
 urls <- "http://download.bls.gov/pub/time.series/la/"
 
 download.file(paste0(urls,"la.txt"), paste0(local_dir, "/la.txt"))
 download.file(paste0(urls,"/la.area"), paste0(local_dir, "/la.area"))
 download.file(paste0(urls,"/la.area_type"), paste0(local_dir, "/la.area_type"))
+
+
+# ---- download-states ----------------------------------------------------
 
 
 states <- c("10.Arkansas", "11.California", "12.Colorado", "13.Connecticut",
@@ -37,6 +46,7 @@ states <- c("10.Arkansas", "11.California", "12.Colorado", "13.Connecticut",
 urls  <- paste0(urls, "la.data.", states)
 files <- paste(data_source, basename(urls), sep = "/")
 
+# You need to delete the raw data to update the data, these are from the FTP
 map2(urls, files, function(urls, files)
   if (!file.exists(files)) {
     Sys.sleep(runif(1, 2, 3))
@@ -44,7 +54,7 @@ map2(urls, files, function(urls, files)
     })
 
 cross <- read_tsv(paste0(local_dir, "/la.area"), skip = 1, col_names = F,
-                       col_types = "ccccccc") %>%
+                       col_types = cols(.default = "c")) %>%
   mutate(series_id = X2, LAUS = str_sub(X2, 2, 8),
                  fips = as.numeric(str_sub(X2, 3, 7))) %>%
   filter(X1 == "F") %>% #this subsets by county
@@ -63,10 +73,14 @@ datacollect <- function(file){
     select(YEAR = year, period, FIPS = fips, var, value) -> data
   return(data)
 }
-data <- map(files, datacollect)
 
-data %>% bind_rows() %>%
-  spread(var, value) -> unemp
+data_temp <- map(files, datacollect)
+
+# ---- annual -------------------------------------------------------------
+
+unemp <- data_temp %>%
+  bind_rows() %>%
+  spread(var, value)
 
 temp_2019 <- unemp %>% 
   filter(YEAR == 2019) %>% 
@@ -84,6 +98,9 @@ unemp_annual <- unemp %>%
 write_csv(unemp_annual, paste0(local_dir, "/LAU_annual.csv"))
 write_rds(unemp_annual, paste0(local_dir, "/LAU_annual.rds"))
 
+# ---- month --------------------------------------------------------------
+
+
 unemp_month <- unemp %>% 
   filter(period != "M13") %>% 
   mutate(MONTH = as.numeric(as.character(factor(period, labels = 1:12))),
@@ -92,6 +109,9 @@ unemp_month <- unemp %>%
 
 write_csv(unemp_month, paste0(local_dir, "/LAU_month.csv"))
 write_rds(unemp_month, paste0(local_dir, "/LAU_month.rds"))
+
+# ---- quarter ------------------------------------------------------------
+
 
 unemp_quarter <- unemp_month %>% 
   mutate(date = as.Date(as.yearqtr(date, format = "%Y-%m-%d") + 0.25) - 1) %>% 

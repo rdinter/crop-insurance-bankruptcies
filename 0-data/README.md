@@ -1,0 +1,21 @@
+# Data Folder
+
+There is a lot of data here, most of which is publicly available with a little bit of elbow grease. Luckily, I provide that with the scripts. I will describe the contents of the file folders, most of which can be downloaded with the associated `.R` scripts with the associated name:
+
+- [CDC](CDC) - Centers for Disease Control and Prevention. Palmer Drought Severity Index (PDSI) [county level data](https://data.cdc.gov/Environmental-Health-Toxicology/Palmer-Drought-Severity-Index-1895-2016/en5r-5ds4). Needs to register for an API and have the value placed in a file of `0-data/0-api-keys.R` with the object `cdc_token = "YOUR API KEY HERE"` within the script.
+    - [0-PDSI.R](0-PDSI.R) - script to download.
+- [degree_days](degree_days) - fine scale weather data from [Schlenker and Roberts](http://www.columbia.edu/~ws2162/links.html) that ranges from 1900-current full year.
+    - scripts to be added at some point.
+- [FDIC](FDIC) - Federal Deposit Insurance Corporation Call Report Data. Multiple sources for the data, there is a [bulk download](https://www5.fdic.gov/sdi/download_large_list_outside.asp) directly from FDIC.gov. There is also a set of SAS files from the [Chicago FED](https://www.chicagofed.org/banking/financial-institution-reports/commercial-bank-data) which go back to 1976 for some variables.
+    - scripts to be added at some point, might just download from [https://github.com/rdinter/fdic-delinquencies](https://github.com/rdinter/fdic-delinquencies).
+- [LAU](LAU) - Local Area Unemployment from the Bureau of Labor Statistics
+    - [0-LAU.R](0-LAU.R) - script to download from the FTP site.
+- [NASS](NASS) - National Agricultural Statistics Service [Quickstats API](https://quickstats.nass.usda.gov/) for accessing national, state, and county level information. County level data are generally only available for Agricultural Census years (2012, 2007, 2002, etc.) as are some state level variables. But in general, national and state level variables are available at the yearly level. Some price data are available at the monthly level. Additionally includes select historical ag census data made available through [ICPSR](https://www.icpsr.umich.edu/icpsrweb/ICPSR/studies/35206#).
+    - [0-NASS.R](0-NASS.R) - script for economic variables at the county, state, and national level. Variables only go back to 1997 for counties.
+    - [0-NASS-crops.R](0-NASS-crops.R) - script for county and agricultural district level planting of crops.
+    - [0-NASS-historical.R](0-NASS-historical.R) - script to download economic variables at the county level prior to 1997, needs to be ran after [0-NASS.R](0-NASS.R).
+- [RMA](RMA) - Risk Management Agency data on crop insurance, mostly from their [Summary of Business](https://www.rma.usda.gov/SummaryOfBusiness).
+    - [0-RMA-cause.R](0-RMA-cause.R) - script to download data on [cause of loss](https://legacy.rma.usda.gov/data/cause).
+    - [0-RMA-SOB.R](0-RMA-SOB.R) - script to download [summary of business data](https://www.rma.usda.gov/SummaryOfBusiness/StateCountyCrop)
+- [uscourts](uscourts) - all of the bankruptcy data. The ["current"](http://www.uscourts.gov/statistics-reports/caseload-statistics-data-tables) data involve the [Judicial F-2](uscourts/f2_judicial) tables from 1997 onward (annual based on September 30th), [F-2 three month](uscourts/f2_three) tables which are quarterly level filings from 31 March 2001 onward, [F-2 one month](uscourts/f2_one) since 31 March 2013 onward (but additional data from PACER has pushed this back to 2007), and [F-5a](uscourts/f5a) which are county origin level filings and publicly available since 31 March 2013 (but available on PACER and through the generosity of [Ernest P. Goss](https://business.creighton.edu/faculty-directory-profile/217/ernest-goss) of Creighton University). Lots of the interesting, non-public data are housed in the [archived](uscourts/archived/README.html) section here.
+    - scripts to be added later, might just link to [https://github.com/rdinter/historical-bankruptcies](https://github.com/rdinter/historical-bankruptcies) to download the relevant files.
