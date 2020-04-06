@@ -1,12 +1,8 @@
 raw
 *.rds
 sob_cause.csv
-sob_cause.rds
 sob_indem.csv
-sob_indem.rds
 sob_indemmnth.csv
-sob_indemmnth.rds
 sobcov.csv
-sobcov.rds
 sobscc.csv
-sobscc.rds
+sob_colsom.csv
