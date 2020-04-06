@@ -72,8 +72,9 @@ agd_year <- map(com_agd, function(x) {
 
 area_planted <- map(1980:format(Sys.Date(), "%Y"), function(x) {
   print(x)
-  nass_data(year = x, agg_level_desc = "AGRICULTURAL DISTRICT",
-            statisticcat_desc = "AREA PLANTED", numeric_vals = T)
+  tryCatch(nass_data(year = x, agg_level_desc = "AGRICULTURAL DISTRICT",
+                     statisticcat_desc = "AREA PLANTED", numeric_vals = T),
+           error = function(e) return(data.frame(year = x)))
 })
 
 j5 <- bind_rows(area_planted)
@@ -108,83 +109,84 @@ agd_cross <- agd_cross %>%
 
 write_csv(agd_cross, paste0(local_dir, "/agd_cross.csv"))
 write_rds(agd_cross, paste0(local_dir, "/agd_cross.rds"))
-
-# ---- planted ------------------------------------------------------------
-
-# County Level Area Planted commodities we have available and their years
-com_county <- nass_param(param = "commodity_desc", agg_level_desc = "COUNTY",
-                         statisticcat_desc = "AREA PLANTED")
-com_year <- map(com_county, function(x) {
-  nass_param(param = "year", agg_level_desc = "COUNTY",
-             statisticcat_desc = "AREA PLANTED", commodity_desc = x)
-})
-
-# Only run this once, it is time intensive. Save the file then do manipulations
-#  from the saved raw data.
-
-# area_planted <- map(1980:(as.numeric(format(Sys.Date(), "%Y")) - 1),
-#                     function(x) {
-#   print(x)
-#   nass_data(year = x, agg_level_desc = "COUNTY",
-#             statisticcat_desc = "AREA PLANTED", numeric_vals = T)
+# 
+# # ---- planted ------------------------------------------------------------
+# 
+# # County Level Area Planted commodities we have available and their years
+# com_county <- nass_param(param = "commodity_desc", agg_level_desc = "COUNTY",
+#                          statisticcat_desc = "AREA PLANTED")
+# com_year <- map(com_county, function(x) {
+#   nass_param(param = "year", agg_level_desc = "COUNTY",
+#              statisticcat_desc = "AREA PLANTED", commodity_desc = x)
 # })
-
-j5 <- bind_rows(area_planted)
-
-write_rds(j5, "0-data/NASS/area_planted_temp.rds")
-
-j5 <- read_rds("0-data/NASS/area_planted_temp.rds")
-
-plants <- j5 %>% 
-  filter(prodn_practice_desc %in% c("ALL PRODUCTION PRACTICES", "IN THE OPEN"),
-         class_desc %in% keep_class,
-         !(short_desc %in% c("SUNFLOWER - ACRES PLANTED",
-                             "WHEAT - ACRES PLANTED"))) %>% 
-  mutate(fips = parse_number(paste0(state_fips_code, county_code)),
-         new_com = case_when(class_desc == "DRY EDIBLE" &
-                               commodity_desc == "PEAS" ~ "DRY PEAS",
-                             class_desc == "GREEN" ~ "GREEN PEAS",
-                             T ~ commodity_desc))
-
-plants_county <- plants %>% 
-  group_by(year, fips, state_fips_code, county_code,
-           asd_code, asd_desc, commodity_desc) %>% 
-  summarise(val = sumn(Value)) %>% 
-  spread(commodity_desc, val)
-
-# plants_county %>%
-#   arrange(year, state_fips_code, asd_code, county_code) %>% 
-#   View
-
-# Correct for missing values in the "other"
-plants_impute <- plants_county %>% 
-  group_by(state_fips_code) %>% 
-  complete(year, nesting(state_fips_code, county_code, asd_code, asd_desc)) %>% 
-  ungroup() %>% 
-  group_by(year, state_fips_code, asd_code) %>% 
-  mutate_at(vars(BARLEY:WHEAT),
-            list(~ifelse(is.na(.),
-                        .[county_code == "998"] / sum(is.na(.)), .))) %>% 
-  filter(county_code != "998") %>% 
-  rename_at(vars(BARLEY:WHEAT), list(~paste0(., "_impute")))
-
-planted <- plants_impute %>% 
-  left_join(plants_county) %>% 
-  rename_all(list(~str_replace_all(., " ", ""))) %>% 
-  ungroup()
-
-# There appears to be issues with fips being in multiple ASD in the early 80s!!
-#  a potential solution? Remove the ASD classes?
-plant <- planted %>%
-  select(year, fips, BARLEY_impute:WHEAT) %>%
-  filter(!is.na(fips)) %>% 
-  group_by(year, fips) %>%
-  summarise_all(sumn)
-
-
-write_csv(plant, paste0(local_dir, "/planted.csv"))
-write_rds(plant, paste0(local_dir, "/planted.rds"))
-
+# 
+# # Only run this once, it is time intensive. Save the file then do manipulations
+# #  from the saved raw data.
+# 
+# # area_planted <- map(1980:(as.numeric(format(Sys.Date(), "%Y")) - 1),
+# #                     function(x) {
+# #   print(x)
+# #   nass_data(year = x, agg_level_desc = "COUNTY",
+# #             statisticcat_desc = "AREA PLANTED", numeric_vals = T)
+# # })
+# 
+# j5 <- bind_rows(area_planted)
+# 
+# write_rds(j5, "0-data/NASS/area_planted_temp.rds")
+# 
+# j5 <- read_rds("0-data/NASS/area_planted_temp.rds")
+# 
+# plants <- j5 %>% 
+#   filter(prodn_practice_desc %in% c("ALL PRODUCTION PRACTICES", "IN THE OPEN"),
+#          class_desc %in% keep_class,
+#          !(short_desc %in% c("SUNFLOWER - ACRES PLANTED",
+#                              "WHEAT - ACRES PLANTED"))) %>% 
+#   mutate(fips = parse_number(paste0(state_fips_code, county_code)),
+#          new_com = case_when(class_desc == "DRY EDIBLE" &
+#                                commodity_desc == "PEAS" ~ "DRY PEAS",
+#                              class_desc == "GREEN" ~ "GREEN PEAS",
+#                              T ~ commodity_desc))
+# 
+# plants_county <- plants %>% 
+#   group_by(year, fips, state_fips_code, county_code,
+#            asd_code, asd_desc, commodity_desc) %>% 
+#   summarise(val = sumn(Value)) %>% 
+#   spread(commodity_desc, val)
+# 
+# # plants_county %>%
+# #   arrange(year, state_fips_code, asd_code, county_code) %>% 
+# #   View
+# 
+# # Correct for missing values in the "other"
+# plants_impute <- plants_county %>% 
+#   group_by(state_fips_code) %>% 
+#   complete(year, nesting(state_fips_code, county_code, asd_code, asd_desc)) %>% 
+#   ungroup() %>% 
+#   group_by(year, state_fips_code, asd_code) %>% 
+#   mutate_at(vars(BARLEY:WHEAT),
+#             list(~ifelse(is.na(.),
+#                         .[county_code == "998"] / sum(is.na(.)), .))) %>% 
+#   filter(county_code != "998") %>% 
+#   rename_at(vars(BARLEY:WHEAT), list(~paste0(., "_impute")))
+# 
+# planted <- plants_impute %>% 
+#   left_join(plants_county) %>% 
+#   rename_all(list(~str_replace_all(., " ", ""))) %>% 
+#   ungroup()
+# 
+# # There appears to be issues with fips being in multiple ASD in the early 80s!!
+# #  a potential solution? Remove the ASD classes?
+# plant <- planted %>%
+#   select(year, fips, BARLEY_impute:WHEAT) %>%
+#   filter(!is.na(fips)) %>% 
+#   group_by(year, fips) %>%
+#   summarise_all(sumn)
+# 
+# # Add in the county information?
+# 
+# write_csv(plant, paste0(local_dir, "/planted.csv"))
+# write_rds(plant, paste0(local_dir, "/planted.rds"))
+# 
 # 
 # # ---- crops --------------------------------------------------------------
 # 
