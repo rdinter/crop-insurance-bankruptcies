@@ -21,7 +21,7 @@ myspread <- function(df, key, value) {
 local_dir   <- "1-tidy/crop_insurance"
 if (!file.exists(local_dir)) dir.create(local_dir)
 
-rma   <- read_rds("0-data/RMA/sobscc.rds")
+rma   <- read_rds("0-data/RMA/sobcov.rds")
 plant <- read_rds("0-data/NASS/planted.rds")
 
 # There appears to be issues with fips being in multiple ASD in the early 80s
@@ -73,17 +73,6 @@ plant_long <- plant_int %>%
   group_by(year, fips, plant_com) %>% 
   spread(impute, val) %>% 
   ungroup()
-
-# LEFT OFF: I believe there is a problem with the BEANS.
-
-
-# plant_long <- plant_int %>% 
-# #  filter(plant_com != "ALL") %>% 
-#   group_by(year, fips) %>% 
-#   summarise(impute = sumn(impute),
-#             planted = sumn(planted),
-#             plant_com = "ALL") %>% 
-#   bind_rows(plant_int)
 
 
 # ---- rma-manipulate -----------------------------------------------------
@@ -222,14 +211,14 @@ j5_all %>%
 
 ###
 
-j5 %>% 
+huh <- j5 %>% 
   group_by(year, plant_com) %>% 
   summarise(covered = sumn(covered*surveyed),
             planted = sumn(planted*surveyed)) %>% 
   gather(var, val, -year, -plant_com) %>% 
   ggplot(aes(year, val, color = var)) +
   geom_line() +
-  facet_wrap(~plant_com, scales = "free") -> huh
+  facet_wrap(~plant_com, scales = "free")
 
 lemon::reposition_legend(huh, "bottom right", panel = "panel-4-4")
 
